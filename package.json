@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "axios": "^0.18.0"
+  },
+  "name": "procoders-lambda",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": "8.10"
+  },
+  "repository": "https://github.com/krisquigley/procoders-lambda.git",
+  "author": "Kris Quigley <kris@krisquigley.co.uk>",
+  "license": "MIT"
+}
