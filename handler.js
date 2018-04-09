@@ -1,79 +1,100 @@
 'use strict'
-const axios = require('axios')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_VuKUCnJ0MRLhRLNnsIGQs8Ve')
 
-const getSubscription = async (requestParams) => {
-  await axios.get('https://api.stripe.com/v1/subscriptions', requestParams).then((response) => {
-    return response.data.data[0].plan.id
-  })
-}
+const checkForFinishedPayments = async (event, context) => {
+  let subscription, subscriptionID, totalPaid, totalDue
+  const body = JSON.parse(event.body)
+  let message
 
-const calculateTotalPaid = async (requestParams) => {
-  await axios.get('https://api.stripe.com/v1/charges', requestParams).then((response) => {
-    const paidCharges = response.data.data.filter(item => {
-      return item.paid === true
-    })
-
-    const totalPaid = paidCharges.map(item => item.amount).reduce((accumulator, item) => {
-      return accumulator + item
-    })
-
-    return totalPaid
-  })
-}
-
-const checkForFinishedPayments = async (event, context, callback) => {
-  let subscription, totalPaid, totalDue
+  // Set the customer id
   const requestParams = {
-    params: {
-      customer: 'cus_CcwfusO0OF8LTI',
-      limit: 100
-    },
-    auth: {
-      username: 'sk_test_VuKUCnJ0MRLhRLNnsIGQs8Ve',
-      password: ''
-    }
-  }
-  const subscriptions = {
-    Instalments: 350000,
-    Parttime: 100000
+    customer: body.data.object.customer,
+    limit: 100
   }
 
   try {
-    subscription = getSubscription(requestParams)
-    totalPaid = calculateTotalPaid(requestParams)
+    [subscriptionID, subscription] = await getSubscriptionPlan(requestParams)
+    totalPaid = await getTotalPaid(requestParams)
+    totalDue = calculateTotalDue(subscription)
   } catch (error) {
-    console.log(error)
+    throw new Error(error)
   }
 
-  if (subscriptions[subscription]) {
-    totalDue = subscriptions[subscription]
-  } else {
-    totalDue = subscription.split('_')[0]
-  }
-
-  console.log(totalDue)
-  console.log(totalPaid)
-
+  // Cancel the subscription if they have finished paying in full
   if (totalDue === totalPaid) {
-    console.log('cancel subscription')
+    try {
+      await stripe.subscriptions.del(subscriptionID)
+      message = 'Cancelled Subscription'
+    } catch (error) {
+      throw new Error(error)
+    }
+  } else if (totalDue > totalPaid) {
+    message = `${totalDue - totalPaid} remaining`
   } else {
-    console.log(`${totalDue - totalPaid} remaining`)
+    throw new Error('Total paid is more than total due')
   }
-
-  const response = {
+  
+  let response = {
     statusCode: 200,
     body: JSON.stringify({
-      message: 'Go Serverless v1.0! Your function executed successfully!',
+      message: message,
       input: event
     })
   }
 
-  callback(null, response)
+ return response
+}
 
-  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-  // callback(null, { message: 'Go Serverless v1.0! Your function executed successfully!', event });
+const getSubscriptionPlan = async (requestParams) => {
+  let subscriptionID, subscription
+
+  // Get the subscription plan and ID
+  try {
+    const subscriptions = await stripe.subscriptions.list(requestParams)
+    subscriptionID = subscriptions.data[0].id
+    subscription = subscriptions.data[0].items.data[0].plan.id
+  } catch (error) {
+    throw new Error(error)
+  }
+  return [subscriptionID, subscription]
+}
+
+const getTotalPaid = async (requestParams) => {
+  let totalPaid
+
+  // Work out the total for all successful payments made
+  try {
+    const charges = await stripe.charges.list(requestParams)
+    const paidCharges = charges.data.filter(item => {
+      return item.paid === true
+    })
+
+    totalPaid = paidCharges.map(item => item.amount).reduce((accumulator, item) => {
+      return accumulator + item
+    })
+  } catch (error) {
+    throw new Error(error)
+  }
+  return totalPaid
+}
+
+const calculateTotalDue = (subscription) => {
+  let totalDue
+
+  // Define the old subscription prices
+  const subscriptionPrices = {
+    Instalments: 350000,
+    Parttime: 100000
+  }
+
+  // Work out how much they need to pay in total
+  if(subscriptionPrices[subscription]) {
+    totalDue = subscriptionPrices[subscription]
+  } else {
+    totalDue = subscription.split('_')[0]
+  }
+
+  return Number(totalDue)
 }
 
 module.exports.call = checkForFinishedPayments
-
-checkForFinishedPayments('', '', () => {})
