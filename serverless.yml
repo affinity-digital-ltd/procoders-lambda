@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: aws-nodejs # NOTE: update this with your service name
+service: ProCoders # NOTE: update this with your service name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -22,7 +22,7 @@ provider:
   runtime: nodejs8.10
 
 # you can overwrite defaults here
-  stage: dev
+  stage: prod
   region: eu-west-1
 
 # you can add statements to the Lambda function's IAM Role here
@@ -42,8 +42,8 @@ provider:
 #            - "/*"
 
 # you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+  environment:
+    STRIPE_SECRET_KEY: ${file(./.env.${self:provider.stage}.yml):STRIPE_SECRET_KEY}
 
 # you can add packaging information here
 #package:

@@ -1,5 +1,5 @@
 'use strict'
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_VuKUCnJ0MRLhRLNnsIGQs8Ve')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const checkForFinishedPayments = async (event, context) => {
   let subscription, subscriptionID, totalPaid, totalDue
@@ -11,6 +11,8 @@ const checkForFinishedPayments = async (event, context) => {
     customer: body.data.object.customer,
     limit: 100
   }
+
+  console.log('requestParams', requestParams)
 
   try {
     [subscriptionID, subscription] = await getSubscriptionPlan(requestParams)
@@ -46,16 +48,22 @@ const checkForFinishedPayments = async (event, context) => {
 }
 
 const getSubscriptionPlan = async (requestParams) => {
-  let subscriptionID, subscription
+  let subscriptions
 
   // Get the subscription plan and ID
   try {
-    const subscriptions = await stripe.subscriptions.list(requestParams)
-    subscriptionID = subscriptions.data[0].id
-    subscription = subscriptions.data[0].items.data[0].plan.id
+    subscriptions = await stripe.subscriptions.list(requestParams)
   } catch (error) {
     throw new Error(error)
   }
+  
+  if (subscriptions.data.length === 0) {
+    throw new Error('Customer does not have any subscriptions')
+  } 
+  
+  const subscriptionID = subscriptions.data[0].id
+  const subscription = subscriptions.data[0].items.data[0].plan.id
+
   return [subscriptionID, subscription]
 }
 
