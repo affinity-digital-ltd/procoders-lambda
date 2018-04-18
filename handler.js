@@ -2,7 +2,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const checkForFinishedPayments = async (event, context) => {
-  let subscription, subscriptionID, totalPaid, totalDue, message
   const body = JSON.parse(event.body)
 
   // Set the customer id
@@ -12,27 +11,32 @@ const checkForFinishedPayments = async (event, context) => {
   }
 
   try {
-    [subscriptionID, subscription] = await getSubscriptionPlan(customerID)
-    totalPaid = await getTotalPaid(customerID)
-    totalDue = calculateTotalDue(subscription)
+    // Get the subscription plan and ID
+    const [subscriptionID, subscriptionPlan] = await getSubscriptionPlan(customerID)
+
+    // Work out the total for all successful payments made
+    const totalPaid = await getTotalPaid(customerID)
+
+    // Work out the total subscription cost from the subscription
+    const totalDue = calculateTotalDue(subscriptionPlan)
 
     // Cancel the subscription if they have finished paying in full
-    message = await attemptToCancelSubscription(totalPaid, totalDue, subscriptionID)
+    const result = await attemptToCancelSubscription(totalPaid, totalDue, subscriptionID)
+
+    // Return response payload
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        message: result,
+        input: event
+      })
+    }
   } catch (error) {
     return respondWithError(event, error)
-  }
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: message,
-      input: event
-    })
   }
 }
 
 const getSubscriptionPlan = async (customerID) => {
-  // Get the subscription plan and ID
   const subscriptions = await stripe.subscriptions.list(customerID)
 
   if (subscriptions.data.length === 0) {
@@ -40,13 +44,12 @@ const getSubscriptionPlan = async (customerID) => {
   }
 
   const subscriptionID = subscriptions.data[0].id
-  const subscription = subscriptions.data[0].items.data[0].plan.id
+  const subscriptionPlan = subscriptions.data[0].items.data[0].plan.id
 
-  return [subscriptionID, subscription]
+  return [subscriptionID, subscriptionPlan]
 }
 
 const getTotalPaid = async (customerID) => {
-  // Work out the total for all successful payments made
   const charges = await stripe.charges.list(customerID)
   const paidCharges = charges.data.filter(item => {
     return item.paid === true
