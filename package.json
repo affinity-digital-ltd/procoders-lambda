@@ -19,5 +19,13 @@
   },
   "scripts": {
     "test": "jest"
+  },
+  "standard": {
+    "globals": [
+      "describe",
+      "test",
+      "afterEach",
+      "expect"
+    ]
   }
 }
