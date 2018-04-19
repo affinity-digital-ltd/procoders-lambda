@@ -8,7 +8,7 @@
   "engines": {
     "node": "8.10"
   },
-  "repository": "https://github.com/krisquigley/procoders-lambda.git",
+  "repository": "https://github.com/affinity-digital-ltd/procoders-lambda.git",
   "author": "Kris Quigley <kris@procoders.co.uk>",
   "license": "MIT",
   "devDependencies": {
