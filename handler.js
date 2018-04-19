@@ -52,11 +52,16 @@ const getSubscriptionPlan = async (customerID) => {
 const getTotalPaid = async (customerID) => {
   const query = Object.assign({}, customerID, {paid: true, refunded: false})
   const paidCharges = await stripe.charges.list(query)
+  let totalPaid
 
   // Add together all payments made and return total
-  const totalPaid = paidCharges.data.map(item => item.amount).reduce((accumulator, item) => {
-    return accumulator + item
-  })
+  if (paidCharges.data.length > 0) {
+    totalPaid = paidCharges.data.map(item => item.amount).reduce((accumulator, item) => {
+      return accumulator + item
+    })
+  } else {
+    totalPaid = 0
+  }
 
   return totalPaid
 }
