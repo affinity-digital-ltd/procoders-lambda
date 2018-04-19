@@ -65,7 +65,7 @@ const getTotalPaid = async (customerID) => {
 const calculateTotalDue = (subscription) => {
   let totalDue
 
-  // Define the old subscription prices
+  // Define the old subscription prices that no longer exist in Stripe
   const subscriptionPrices = {
     Instalments: 350000,
     Parttime: 100000

@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "axios": "^0.18.0",
     "stripe": "^5.8.0"
   },
   "name": "procoders-lambda",
@@ -10,7 +9,7 @@
     "node": "8.10"
   },
   "repository": "https://github.com/krisquigley/procoders-lambda.git",
-  "author": "Kris Quigley <kris@krisquigley.co.uk>",
+  "author": "Kris Quigley <kris@procoders.co.uk>",
   "license": "MIT",
   "devDependencies": {
     "dotenv": "^5.0.1",
