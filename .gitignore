@@ -7,3 +7,4 @@ jspm_packages
 .env
 .env.dev.yml
 .env.prod.yml
+yarn-error.log
