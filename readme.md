@@ -20,3 +20,18 @@ To deploy to production
 ```
 serverless deploy --stage prod
 ```
+
+## Tests
+
+To run the test suite, install dependencies 
+
+```
+yarn install
+```
+
+Then
+
+```
+yarn test
+```
+
