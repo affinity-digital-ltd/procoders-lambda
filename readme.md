@@ -1,6 +1,6 @@
 # Background
 
-The purpose of this code and usage can be found in an [article]() we previously published.
+The purpose of this code and usage can be found in an [article](https://procoders.co.uk/blog/2018-04-20-paying-in-instalments-through-stripe-with-nodejs-810-and-serverless) we previously published.
 
 ## Usage
 
