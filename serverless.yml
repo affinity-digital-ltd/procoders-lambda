@@ -6,7 +6,7 @@ provider:
   stage: dev
   region: eu-west-1
   environment:
-    STRIPE_SECRET_KEY: ${file(./.env.${self:provider.stage}.yml):STRIPE_SECRET_KEY}
+    STRIPE_SECRET_KEY: ${file(./.env.${opt:stage}.yml):STRIPE_SECRET_KEY}
 
 functions:
   checkForFinishedPayments:
